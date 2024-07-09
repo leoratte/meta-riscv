@@ -27,6 +27,11 @@ SRC_URI:milkv-duo = " \
             file://milkv-duo-support-files.patch \
             "
 
+SRC_URI:append:visionfive2 = " \
+	file://tftp-mmc-boot.txt \
+	file://uEnv-visionfive2.txt \
+"
+
 UBOOT_MACHINE:milkv-duo ?= "milkv-duo_defconfig"
 
 SRCREV:milkv-duo = "4345a29c08e67044021f74139b4ff307019e9932"
@@ -75,6 +80,10 @@ do_compile:prepend:freedom-u540() {
     export OPENSBI=${DEPLOY_DIR_IMAGE}/fw_dynamic.bin
 }
 
+do_compile:prepend:visionfive2() {
+    export OPENSBI=${DEPLOY_DIR_IMAGE}/fw_dynamic.bin
+}
+
 do_configure:prepend:ae350-ax45mp() {
     if [ -f "${UNPACKDIR}/tftp-mmc-boot.txt" ]; then
         sed -i -e 's,@SERVERIP@,${TFTP_SERVER_IP},g' ${UNPACKDIR}/tftp-mmc-boot.txt
@@ -106,6 +115,19 @@ do_deploy:append:milkv-duo() {
         cp ${UNPACKDIR}/uEnv-milkv-duo.txt ${DEPLOYDIR}/uEnv.txt
     fi
     install -m 0644 ${B}/u-boot.dtb ${DEPLOYDIR}
+}
+
+do_configure:prepend:visionfive2() {
+    sed -i -e 's,@SERVERIP@,${TFTP_SERVER_IP},g' ${UNPACKDIR}/tftp-mmc-boot.txt
+    mkimage -O linux -T script -C none -n "U-Boot boot script" \
+        -d ${UNPACKDIR}/tftp-mmc-boot.txt ${B}/${UBOOT_ENV_BINARY}
+}
+
+do_deploy:append:visionfive2() {
+    if [ -f "${UNPACKDIR}/uEnv-visionfive2.txt" ]; then
+        cp ${UNPACKDIR}/uEnv-visionfive2.txt ${DEPLOYDIR}/vf2_uEnv.txt
+    fi
+    #cp ${B}/spl/${SPL_BINARYNAME}.normal.out ${DEPLOYDIR}
 }
 
 FILES:${PN}:append:freedom-u540 = " /boot/boot.scr.uimg"
